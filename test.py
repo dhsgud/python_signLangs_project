@@ -11,7 +11,7 @@ dataset = 'C:/Users/kimdonghan/PycharmProjects/python_signLangs_project/model/ke
 model_save_path = 'C:/Users/kimdonghan/PycharmProjects/python_signLangs_project/model/keypoint_classifier/keypoint_classifier.hdf5'
 
 # 분류할 클래스의 수
-NUM_CLASSES = 6
+NUM_CLASSES = 10
 
 # CSV 파일에서 X 데이터(손동작의 특성)와 y 데이터(레이블)을 로드
 X_dataset = np.loadtxt(dataset, delimiter=',', dtype='float32', usecols=list(range(1, 21 * 2 + 1)))

@@ -16,7 +16,12 @@ from utils import CvFpsCalc
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
 
+last_saved_hand_sign_label = None
+last_hand_sign_change_time = 0
 
+hand_sign_string = {
+    1: "열기", 2: "닫기", 3: "포인터", 4: "오케이", 5: "사랑해", 6: "가위", 7:"주기", 8:"받기", 9:"이건아님"
+}
 def get_args():
     parser = argparse.ArgumentParser()
 
@@ -143,8 +148,11 @@ def main():
                 if mode != 0:
                     logging_csv(current_id, mode, pre_processed_landmark_list, pre_processed_point_history_list)
 
+
                 # ハンドサイン分類
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
+                hand_sign_label = keypoint_classifier_labels[hand_sign_id]
+                save_hand_sign_id(hand_sign_id)
                 if hand_sign_id == 2:  # 指差しサイン
                     point_history.append(landmark_list[8])  # 人差指座標
                 else:
@@ -188,6 +196,26 @@ def main():
 
     cap.release()
     cv.destroyAllWindows()
+
+
+def save_hand_sign_id(hand_sign_label):
+    global last_saved_hand_sign_label
+    global last_hand_sign_change_time
+    current_time = time.time()
+
+    if hand_sign_label != last_saved_hand_sign_label:
+        last_hand_sign_change_time = current_time  # 시간을 업데이트합니다.
+        last_saved_hand_sign_label = hand_sign_label  # 레이블을 업데이트합니다.
+    else:
+        # 손 동작 레이블이 1초 이상 지속되었는지 확인합니다.
+        if current_time - last_hand_sign_change_time >= 1:
+            label_plus_one = hand_sign_label + 1
+            string_to_save = hand_sign_string.get(label_plus_one, "기본값")
+
+            with open('hand_sign.txt', 'a', encoding='utf-8') as file:
+                file.write(f'{string_to_save}\n')
+            last_hand_sign_change_time = current_time
+            last_saved_hand_sign_label = hand_sign_label
 
 
 def calc_bounding_rect(image, landmarks):
