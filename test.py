@@ -8,7 +8,7 @@ RANDOM_SEED = 42
 
 # 파일 경로 설정
 dataset = 'C:/Users/kimdonghan/PycharmProjects/python_signLangs_project/model/keypoint_classifier/keypoint.csv'
-model_save_path = 'C:/Users/kimdonghan/PycharmProjects/python_signLangs_project/model/keypoint_classifier/keypoint_classifier.hdf5'
+model_save_path = '/model/keypoint_classifier/keypoint_classifier.hdf5'
 
 # 분류할 클래스의 수
 NUM_CLASSES = 10

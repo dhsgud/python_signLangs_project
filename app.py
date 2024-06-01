@@ -7,6 +7,7 @@ import itertools
 from collections import Counter
 from collections import deque
 import time
+import json
 
 import cv2 as cv
 import numpy as np
@@ -19,9 +20,13 @@ from model import PointHistoryClassifier
 last_saved_hand_sign_label = None
 last_hand_sign_change_time = 0
 
-hand_sign_string = {
-    1: "열기", 2: "닫기", 3: "포인터", 4: "오케이", 5: "사랑해", 6: "가위", 7:"주기", 8:"받기", 9:"이건아님"
-}
+def load_hand_sign_string(json_file_path):
+    with open(json_file_path, 'r', encoding='utf-8') as file:
+        hand_sign_string = json.load(file)
+    return hand_sign_string
+
+hand_sign_string = load_hand_sign_string('hand_sign_string.json')
+
 def get_args():
     parser = argparse.ArgumentParser()
 
@@ -40,7 +45,7 @@ def get_args():
                         default=0.5)
 
     parser.add_argument("--start_id", help='start id', type=int, default=0)
-    parser.add_argument("--duration", help='duration in seconds', type=int, default=10)
+    parser.add_argument("--duration", help='duration in seconds', type=int, default=20)
 
     args = parser.parse_args()
 
@@ -210,7 +215,7 @@ def save_hand_sign_id(hand_sign_label):
         # 손 동작 레이블이 1초 이상 지속되었는지 확인합니다.
         if current_time - last_hand_sign_change_time >= 1:
             label_plus_one = hand_sign_label + 1
-            string_to_save = hand_sign_string.get(label_plus_one, "기본값")
+            string_to_save = hand_sign_string.get(str(label_plus_one), "기본값")
 
             with open('hand_sign.txt', 'a', encoding='utf-8') as file:
                 file.write(f'{string_to_save}\n')
