@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Friends</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Friends List</h2>
+        <ul id="friends" class="friend-list"></ul>
+        <form id="addFriendForm" class="friend-form">
+            <input type="text" id="friendNameInput" placeholder="친구 이름" class="input-field">
+            <button type="submit" class="button">Add Friend</button>
+        </form>
+        <a href="{{ url_for('main') }}" class="button">Back to Main</a>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('{{ url_for('api_friends') }}')
+                .then(response => response.json())
+                .then(data => {
+                    const friendsList = document.getElementById('friends');
+                    data.friends.forEach(friend => {
+                        const li = document.createElement('li');
+                        li.className = 'friend-item';
+
+                        const friendName = document.createElement('span');
+                        friendName.textContent = friend.username;
+                        friendName.className = 'friend-name';
+
+                        // 삭제 버튼 추가
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = '삭제';
+                        deleteButton.className = 'button button-delete';
+                        deleteButton.onclick = () => {
+                            fetch('{{ url_for('remove_friend') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ friend_name: friend.username })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    li.remove();
+                                } else {
+                                    alert(data.message);
+                                }
+                            });
+                        };
+
+                        li.appendChild(friendName);
+                        li.appendChild(deleteButton);
+                        friendsList.appendChild(li);
+                    });
+                });
+
+            const form = document.getElementById('addFriendForm');
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                const friendName = document.getElementById('friendNameInput').value;
+                fetch('{{ url_for('add_friend') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ friend_name: friendName })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const li = document.createElement('li');
+                        li.className = 'friend-item';
+
+                        const friendNameSpan = document.createElement('span');
+                        friendNameSpan.textContent = friendName;
+                        friendNameSpan.className = 'friend-name';
+
+                        // 삭제 버튼 추가
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = '삭제';
+                        deleteButton.className = 'button button-delete';
+                        deleteButton.onclick = () => {
+                            fetch('{{ url_for('remove_friend') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ friend_name: friendName })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    li.remove();
+                                } else {
+                                    alert(data.message);
+                                }
+                            });
+                        };
+
+                        li.appendChild(friendNameSpan);
+                        li.appendChild(deleteButton);
+                        document.getElementById('friends').appendChild(li);
+                    } else {
+                        alert(data.message);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

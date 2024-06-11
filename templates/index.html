@@ -2,19 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hand Gesture Recognition</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 </head>
 <body>
-    <h1>Hand Gesture Recognition Stream</h1>
-    <img src="{{ url_for('video_feed') }}" width="960" height="540" style="display:block;">
-    <h2 id="gestureText" style="color: blue; font-size: 24px; text-align: center;">Waiting for gesture...</h2>
+    <h1>Hand Gesture Recognition</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+    <p id="gesture"></p>
+
     <script>
-        const source = new EventSource('/video_feed');
-        source.onmessage = function(event) {
-            // Here, the event.data contains the text streamed from the server
-            document.getElementById('gestureText').innerText = event.data; // Update the text in the H2 tag
+        const socket = io();
+        const video = document.getElementById('video');
+
+        // Get access to the camera
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            video.srcObject = stream;
+            video.play();
+        });
+
+        // Capture video frames and send to the server
+        function captureFrame() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataURL = canvas.toDataURL('image/jpeg');
+            socket.emit('video_frame', dataURL);
         }
+
+        setInterval(captureFrame, 100); // Send frame every 100 ms
+
+        // Receive hand sign from the server
+        socket.on('hand_sign', data => {
+            document.getElementById('gesture').innerText = data.hand_sign;
+        });
     </script>
 </body>
 </html>

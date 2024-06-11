@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Tsu - Messages</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Messages</h2>
+        <div id="messages" class="message-list"></div>
+        <form id="messageForm" class="message-form">
+            <input type="text" id="recipientInput" placeholder="받는 사람" class="input-field">
+            <input type="text" id="messageInput" placeholder="메시지를 입력하세요" class="input-field">
+            <button type="submit" class="button">Send</button>
+        </form>
+        <button id="start-translation" class="button">Start Translation</button>
+        <div id="translation-result" class="message-list"></div>
+        <form id="addFriendForm" class="friend-form">
+            <input type="text" id="friendNameInput" placeholder="친구 이름" class="input-field">
+            <button type="submit" class="button">Add Friend</button>
+        </form>
+        <a href="{{ url_for('main') }}" class="button">Back to Main</a>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const socket = io();
+            const username = "{{ session['username'] }}";
+
+            // Join the room for the current user
+            socket.emit('join', { username: username });
+
+            const form = document.getElementById('messageForm');
+            const recipientInput = document.getElementById('recipientInput');
+            const messageInput = document.getElementById('messageInput');
+            const messages = document.getElementById('messages');
+            const translationResult = document.getElementById('translation-result');
+            const startTranslationButton = document.getElementById('start-translation');
+            const addFriendForm = document.getElementById('addFriendForm');
+            const friendNameInput = document.getElementById('friendNameInput');
+
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                const recipient = recipientInput.value;
+                const message = messageInput.value;
+                socket.emit('send_message', { recipient: recipient, message: message });
+                messageInput.value = '';
+            });
+
+            socket.on('receive_message', data => {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message-item';
+                messageElement.textContent = `${data.sender}: ${data.message}`;
+                messages.prepend(messageElement);  // 새로운 메시지를 맨 위에 추가
+            });
+
+            // Start translation process
+            startTranslationButton.addEventListener('click', () => {
+                $.get('/start_translation', function(response) {
+                    if (response.status === 'success') {
+                        translationResult.textContent = response.message;
+                    } else {
+                        translationResult.textContent = response.message;
+                    }
+                });
+            });
+
+            // Real-time hand sign translation
+            socket.on('receive_hand_sign', function(data) {
+                console.log('New hand sign received:', data.hand_sign);
+                const handSignElement = document.createElement('div');
+                handSignElement.className = 'message-item';
+                handSignElement.textContent = `Hand Sign: ${data.hand_sign}`;
+                translationResult.prepend(handSignElement);  // 새로운 핸드사인을 맨 위에 추가
+            });
+
+            // Add friend process
+            addFriendForm.addEventListener('submit', event => {
+                event.preventDefault();
+                const friendName = friendNameInput.value;
+                $.ajax({
+                    url: '/add_friend',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ friend_name: friendName }),
+                    success: function(response) {
+                        alert(response.message);
+                        friendNameInput.value = '';
+                    },
+                    error: function(response) {
+                        alert(response.responseJSON.message);
+                    }
+                });
+            });
+
+            // Log messages to the message window
+            socket.on('log_message', function(data) {
+                console.log('Log message received:', data.message);
+                const logElement = document.createElement('div');
+                logElement.className = 'message-item';
+                logElement.textContent = `Log: ${data.message}`;
+                translationResult.prepend(logElement);  // 새로운 로그 메시지를 맨 위에 추가
+            });
+
+            // Leave the room when the user navigates away
+            window.addEventListener('beforeunload', () => {
+                socket.emit('leave', { username: username });
+            });
+        });
+    </script>
+</body>
+</html>
